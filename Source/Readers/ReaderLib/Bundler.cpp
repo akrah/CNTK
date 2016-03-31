@@ -5,6 +5,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 
 #include "Bundler.h"
+#include <unordered_map>
 
 namespace Microsoft { namespace MSR { namespace CNTK {
 
@@ -157,7 +158,7 @@ class Bundler::BundlingChunk : public Chunk
     Bundler* m_parent;
     size_t m_chunkId;
 
-    // A mapping between exposed sequence id and inner chunk for each deserialzier.
+    // A mapping between exposed sequence id and inner chunk for each deserializer.
     std::vector<ChunkPtr> m_innerChunks;
     // A mapping between exposed sequence id and inner sequence id for each deserializer.
     std::vector<size_t> m_sequenceToSequence;
@@ -197,6 +198,8 @@ public:
         SequenceDescription s;
         for (size_t deserializerIndex = 1; deserializerIndex < m_parent->m_deserializers.size(); ++deserializerIndex)
         {
+            unordered_map<size_t, ChunkPtr> secondaryChunkPtrs;
+
             for (size_t sequenceIndex = 0; sequenceIndex < sequences.size(); ++sequenceIndex)
             {
                 if (chunk->m_invalid.find(sequenceIndex) != chunk->m_invalid.end())
@@ -207,7 +210,20 @@ public:
                 size_t currentIndex = sequenceIndex * m_numberOfInputs + deserializerIndex;
                 deserializers[deserializerIndex]->GetSequenceDescriptionByKey(sequences[sequenceIndex].m_key, s);
                 m_sequenceToSequence[currentIndex] = s.m_id;
-                m_innerChunks[currentIndex] = deserializers[deserializerIndex]->GetChunk(s.m_chunkId);
+
+                ChunkPtr secondaryChunk;
+                auto it = secondaryChunkPtrs.find(s.m_chunkId);
+                if (it == secondaryChunkPtrs.end())
+                {
+                    secondaryChunk = deserializers[deserializerIndex]->GetChunk(s.m_chunkId);
+                    secondaryChunkPtrs.insert(make_pair(s.m_chunkId, secondaryChunk));
+                }
+                else
+                {
+                    secondaryChunk = it->second;
+                }
+
+                m_innerChunks[currentIndex] = secondaryChunk;
             }
         }
     }

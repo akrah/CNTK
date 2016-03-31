@@ -222,14 +222,7 @@ ChunkPtr MLFDataDeserializer::GetChunk(size_t chunkId)
 {
     UNUSED(chunkId);
     assert(chunkId == 0);
-    if (!m_weakChunk.expired())
-    {
-        return m_weakChunk.lock();
-    }
-
-    auto chunk = make_shared<MLFChunk>(this);
-    m_weakChunk = chunk;
-    return chunk;
+    return make_shared<MLFChunk>(this);
 };
 
 // Sparse labels for an utterance.
