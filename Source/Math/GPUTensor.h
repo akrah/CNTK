@@ -23,6 +23,12 @@ void TensorOpN(ElemType beta, array<ElemType*, N> pointers, ElemType alpha, Elem
                const SmallVector<size_t>& regularOpDims, const array<SmallVector<ptrdiff_t>, N>& regularStrides,
                const SmallVector<size_t>& reducingOpDims, const array<SmallVector<ptrdiff_t>, N>& reducingStrides);
 
+template <class ElemType, C_size_t N>
+void TensorOpM(ElemType beta, array<ElemType*, N> pointers, ElemType Gamma, ElemType gamma, ElemType alpha, ElementWiseOperator op,
+	const array<size_t, N>& offsets,
+	const SmallVector<size_t>& regularOpDims, const array<SmallVector<ptrdiff_t>, N>& regularStrides,
+	const SmallVector<size_t>& reducingOpDims, const array<SmallVector<ptrdiff_t>, N>& reducingStrides);
+
 template <class ElemType>
 void LaunchUnaryTensorOp(ElemType beta, const ElemType* pa, ElemType* pb, ElemType alpha, ElementWiseOperator op, size_t regularOpDim);
 } } }

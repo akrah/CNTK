@@ -1643,6 +1643,8 @@ shared_ptr<ComputationNode<ElemType>> SimpleNetworkBuilder<ElemType>::ApplyNonli
         output = builder.RectifiedLinear(input, nodeName);
     else if (nonLinearFunction == OperationNameOf(TanhNode))
         output = builder.Tanh(input, nodeName);
+	else if (nonLinearFunction == OperationNameOf(AutobinomialNode))
+		output = builder.Autobinomial(input, nodeName);
     else if (nonLinearFunction == L"None" || nonLinearFunction == L"none" || nonLinearFunction == L"")
     {
         output = input; // linear layer

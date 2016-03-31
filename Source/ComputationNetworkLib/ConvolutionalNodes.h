@@ -291,7 +291,7 @@ public:
         ReleaseMatrixToPool(m_tempMatrix, matrixPool);
     }
 
-private:
+public:
     size_t m_outputChannels;
     size_t m_kernelWidth, m_kernelHeight;
     size_t m_horizontalSubsample, m_verticalSubsample;
@@ -477,7 +477,7 @@ public:
         }
     }
 
-protected:
+public:
     size_t m_windowWidth, m_windowHeight;
     size_t m_horizontalSubsample, m_verticalSubsample;
     size_t m_inputSizePerSample, m_outputSizePerSample;

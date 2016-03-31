@@ -599,7 +599,7 @@ bool ComputationNetwork::UnitTest(const ComputationNodeBasePtr& rootNode)
 // -----------------------------------------------------------------------
 // topological plot [erw]
 // -----------------------------------------------------------------------
-
+//#define LP
 class DotGraphConfigure
 {
 public:
@@ -610,20 +610,26 @@ public:
     wstring m_labelsStyle;
     wstring m_normalNodeStyle;
     wstring m_PrecomputingNodeStyle;
-    wstring m_pastValueNodeStyle;
-    wstring m_futureValueNodeStyle;
+    wstring m_AutobinomialStyle;
+    wstring m_ReluNodeStyle;
+	wstring m_BatchNodeStyle;
+	wstring m_ConvNodeStyle;
+	wstring m_AveragePoolingNodeStyle;
 
     DotGraphConfigure()
     {
-        m_LearnableParameterStyle = L"node [ shape = box     , color = gray , style = \"filled, rounded\"  ]; ";
-        m_featuresStyle = L"node [ shape = ellipse , color = red  , fillcolor = white ]; ";
-        m_CriteriaStyle = L"node [ shape = doublecircle , color =  red , fillcolor = white  ]; ";
-        m_nodesReqMultiSeqHandlingStyle = L"node [ shape = doublecircle , color =  brown , fillcolor = white  ]; ";
-        m_normalNodeStyle = L"node [ shape = ellipse, color = blue, fillcolor = white, style = solid ]; ";
-        m_PrecomputingNodeStyle = L"node [ shape = box    , color = black, style = \"dashed, filled\",  fillcolor= limegreen ] ;";
-        m_labelsStyle = L"node [ shape = diamond, color = brown, style = bold ] ;  ";
-        m_pastValueNodeStyle = L"node [ shape = box3d  , color = lightgray, style = \"filled\" , fillcolor = white ] ";
-        m_futureValueNodeStyle = L"node [ shape = box3d  , color = red, style = \"filled\" , fillcolor = white ] ";
+        m_LearnableParameterStyle =       L"node [ shape = rect, color = white, fontcolor = black, style= \"rounded,filled\", fillcolor = gray]; ";
+        m_featuresStyle =                 L"node [ shape = house, color = white, fontcolor = black, style= filled, fillcolor = deepskyblue     ]; ";
+		m_CriteriaStyle =                 L"node [ shape = rect, color = white, fontcolor = black, style= filled, fillcolor = brown1     ]; ";
+        m_nodesReqMultiSeqHandlingStyle = L"node [ shape = rect, color = white, fontcolor = black, style= filled, fillcolor = cyan      ]; ";
+		m_normalNodeStyle =               L"node [ shape = rect, color = white, fontcolor = black, style= filled, fillcolor = yellow2       ]; ";
+        m_PrecomputingNodeStyle =         L"node [ shape = rect, color = white, fontcolor = black, style= filled, fillcolor = gray       ]; ";
+        m_labelsStyle =                   L"node [ shape = note, color = white, fontcolor = black, style= filled, fillcolor = deepskyblue       ]; ";
+        m_AutobinomialStyle =             L"node [ shape = rect, color = white, fontcolor = black, style= filled, fillcolor = royalblue      ]; ";
+        m_ReluNodeStyle =                 L"node [ shape = rect, color = white, fontcolor = black, style= filled, fillcolor = indianred      ]; ";
+		m_BatchNodeStyle =                L"node [ shape = rect, color = white, fontcolor = black, style= filled, fillcolor = mediumseagreen      ]; ";
+		m_ConvNodeStyle =                 L"node [ shape = rect, color = white, fontcolor = black, style= filled, fillcolor = turquoise      ]; ";
+		m_AveragePoolingNodeStyle =       L"node [ shape = rect, color = white, fontcolor = black, style= filled, fillcolor = chocolate      ]; ";
     }
 };
 
@@ -649,33 +655,77 @@ void ComputationNetwork::DescribeNetworkUsingDot(list<ComputationArc>& arcs,
     // get precompute node
     vector<ComputationNodeBasePtr> PreComputedNodes;
     vector<ComputationNodeBasePtr> allnodes = GetAllNodes();
-    for (const auto& n : allnodes)
+
+	//for (const auto& n : allnodes)
+	//{
+	//	wstring a = n->GetName().c_str();
+	//	wprintf(L"%ls \n", a.c_str());
+	//}
+
+    
+	for (const auto& n : allnodes)
     {
         if (n->RequiresPreCompute())
             PreComputedNodes.push_back(n);
     }
 
     // get PastValue node
-    vector<ComputationNodeBasePtr> pastValueNodes;
+    vector<ComputationNodeBasePtr> AutobinomialNodes;
     for (const auto& n : allnodes)
     {
-        if (n->OperationName() == OperationNameOf(PastValueNode) || n->OperationName() == L"Delay")
-            pastValueNodes.push_back(n);
+        if (n->OperationName() == L"Autobinomial")
+            AutobinomialNodes.push_back(n);
     }
 
+	// get FuturetValue node
+	vector<ComputationNodeBasePtr> BatchNodes;
+	for (const auto& n : allnodes)
+	{
+		if (n->OperationName() == L"BatchNormalization")
+			BatchNodes.push_back(n);
+	}
+
     // get FuturetValue node
-    vector<ComputationNodeBasePtr> futureValueNodes;
+    vector<ComputationNodeBasePtr> ReluNodes;
     for (const auto& n : allnodes)
     {
-        if (n->OperationName() == OperationNameOf(FutureValueNode))
-            futureValueNodes.push_back(n);
+		if (n->OperationName() == L"RectifiedLinear")
+            ReluNodes.push_back(n);
     }
+
+	vector<ComputationNodeBasePtr> ConvNodes;
+	for (const auto& n : allnodes)
+	{
+		if (n->OperationName() == L"Convolution")
+			ConvNodes.push_back(n);
+	}
+
+	vector<ComputationNodeBasePtr> AveragePoolingNodes;
+	for (const auto& n : allnodes)
+	{
+		if (n->OperationName() == L"AveragePooling")
+			AveragePoolingNodes.push_back(n);
+	}
+
+	vector<ComputationNodeBasePtr> OutputNodes;
+	for (const auto& n : allnodes)
+	{
+		if (n->GetName() == L"OutputNodes.z")
+			OutputNodes.push_back(n);
+	}
+
     // get learnableParameters
     vector<ComputationNodeBasePtr> learnableParameters;
-    for (const auto& n : allnodes)
     {
-        if (n->OperationName() == OperationNameOf(LearnableParameter))
-            learnableParameters.push_back(n);
+#ifndef LP
+		for (const auto& n : allnodes)
+		{
+				if (n->OperationName() == OperationNameOf(LearnableParameter))
+					if (n->GetSampleLayout().GetDims().size() > 1)
+						if (n->GetSampleLayout().GetDim(1) != 1)
+							learnableParameters.push_back(n);
+		}
+#endif
     }
 
     fstream << "strict digraph {\n";
@@ -690,6 +740,7 @@ void ComputationNetwork::DescribeNetworkUsingDot(list<ComputationArc>& arcs,
     fstream << FormSpecialNodes(dotcfg.m_LearnableParameterStyle, learnableParameters);
     // features
     fstream << FormSpecialNodes(dotcfg.m_featuresStyle, m_features);
+	fstream << FormSpecialNodes(dotcfg.m_featuresStyle, OutputNodes);
     // labels
     fstream << FormSpecialNodes(dotcfg.m_labelsStyle, m_labels);
     // critera
@@ -697,9 +748,12 @@ void ComputationNetwork::DescribeNetworkUsingDot(list<ComputationArc>& arcs,
     // pre-compute nodes
     fstream << FormSpecialNodes(dotcfg.m_PrecomputingNodeStyle, PreComputedNodes);
     // PastValue nodes
-    fstream << FormSpecialNodes(dotcfg.m_pastValueNodeStyle, pastValueNodes);
+    fstream << FormSpecialNodes(dotcfg.m_AutobinomialStyle, AutobinomialNodes);
     // FutureValue nodes
-    fstream << FormSpecialNodes(dotcfg.m_futureValueNodeStyle, futureValueNodes);
+    fstream << FormSpecialNodes(dotcfg.m_ReluNodeStyle,ReluNodes);
+	fstream << FormSpecialNodes(dotcfg.m_BatchNodeStyle, BatchNodes);
+	fstream << FormSpecialNodes(dotcfg.m_ConvNodeStyle, ConvNodes);
+	fstream << FormSpecialNodes(dotcfg.m_AveragePoolingNodeStyle, AveragePoolingNodes);
     // normal nodes
     fstream << dotcfg.m_normalNodeStyle << L"\n";
 
@@ -708,13 +762,96 @@ void ComputationNetwork::DescribeNetworkUsingDot(list<ComputationArc>& arcs,
     // ////////////////////////////////////////////////////////////////////////
     fstream << L"\n// add labels and operation name\n";
     wstring line;
-    for (const auto& x : allnodes)
-    {
-        line.clear();
-        line = msra::strfun::wstrprintf(L" \"%ls\" [ label = \"%ls [%s%s]\\n%ls\" ] ;\n",
-                                        x->GetName().c_str(), x->GetName().c_str(), string(x->GetSampleLayout()).c_str(), x->HasMBLayout() ? " x *" : "",
-                                        x->OperationName().c_str());
-        fstream << line;
+	for (const auto& x : allnodes)
+	{
+		line.clear();
+#ifdef LP
+		if (x->OperationName() != L"LearnableParameter")
+		{
+#endif
+			wstring OpName = x->OperationName();
+			wstring NoName = x->GetName();
+
+			if (OpName == L"InputValue" && NoName == L"features")
+				OpName = L"Input Image";
+
+			if (OpName == L"InputValue" && NoName == L"labels")
+				OpName = L"Labels";
+
+			if (NoName == L"OutputNodes.t")
+				OpName = L"FullyConnected";
+
+			if (NoName == L"OutputNodes.z")
+				OpName = L"Output";
+			if (x->OperationName() == OperationNameOf(LearnableParameter))
+				OpName = L"Filters";
+			if (x->OperationName() == OperationNameOf(AutobinomialNode))
+				OpName = L"AutoMarkov";
+
+			if (OpName == L"Filters")
+			{
+				SmallVector<size_t> dims = x->GetSampleLayout().GetDims();
+
+				if (x->GetSampleLayout().GetDims().size() > 1)
+					if (x->GetSampleLayout().GetDim(1) != 1)
+						line = msra::strfun::wstrprintf(L" \"%ls\" [ label = \"%ls\n%dx%d\" ] ;\n",
+						NoName.c_str(), OpName.c_str(), dims[1], dims[0]);
+			}
+			else if (OpName == OperationNameOf(ConvolutionNode))
+			{
+				auto node = dynamic_pointer_cast<ConvolutionNode<float>>(x);
+
+				line = msra::strfun::wstrprintf(L" \"%ls\" [ label = \"%ls \nK. %dx%d\nS. %d:%d\" ] ;\n",
+					NoName.c_str(),
+					OpName.c_str(), node->m_kernelWidth, node->m_kernelWidth, node->m_horizontalSubsample, node->m_verticalSubsample);
+			}
+			else if (OpName == L"AutoMarkov")
+			{
+				auto outDims = ImageDimensions(x->GetSampleLayout(), ImageLayoutKind::CHW);
+
+				line = msra::strfun::wstrprintf(L" \"%ls\" [ label = \"%ls \n%dx%dx%d\" ] ;\n",
+					NoName.c_str(),
+					OpName.c_str(), outDims.m_width, outDims.m_height, outDims.m_numChannels);
+			}
+			else if (OpName == OperationNameOf(AveragePoolingNode))
+			{
+				auto node = dynamic_pointer_cast<PoolingNodeBase<float>>(x);
+
+				line = msra::strfun::wstrprintf(L" \"%ls\" [ label = \"%ls \nK. %dx%d\nS. %d:%d\" ] ;\n",
+					NoName.c_str(),
+					OpName.c_str(), node->m_windowWidth, node->m_windowHeight, node->m_horizontalSubsample, node->m_verticalSubsample);
+			}
+			else if (OpName == L"Input Image")
+			{
+				auto outDims = ImageDimensions(x->GetSampleLayout(), ImageLayoutKind::CHW);
+
+				line = msra::strfun::wstrprintf(L" \"%ls\" [ label = \"%ls \n%dx%dx%d\" ] ;\n",
+					NoName.c_str(),
+					OpName.c_str(), outDims.m_width, outDims.m_height, outDims.m_numChannels);
+			}
+			else if (OpName == L"Output" || OpName == L"Labels")
+			{
+				line = msra::strfun::wstrprintf(L" \"%ls\" [ label = \"%ls\n%d\" ] ;\n",
+					NoName.c_str(), OpName.c_str(), x->GetSampleLayout().GetDim(0));
+			}
+			else if (OpName == L"FullyConnected")
+			{
+				auto inDims = ImageDimensions(x->GetInputSampleLayout(1), ImageLayoutKind::CHW);
+
+				line = msra::strfun::wstrprintf(L" \"%ls\" [ label = \"%ls \n%dx%dx%d\" ] ;\n",
+					NoName.c_str(),
+					OpName.c_str(), inDims.m_width, inDims.m_height, inDims.m_numChannels);
+			}
+			else
+			{
+				line = msra::strfun::wstrprintf(L" \"%ls\" [ label = \"%ls\" ] ;\n",
+					NoName.c_str(), OpName.c_str());
+			}
+
+			fstream << line;
+#ifdef LP
+		}
+#endif
     }
 
     // ////////////////////////////////////////////////////////////////////////
@@ -751,37 +888,50 @@ void ComputationNetwork::DescribeNetworkUsingDot(list<ComputationArc>& arcs,
 
         wstring srcname = src->GetName();
         wstring desname = des->GetName();
+#ifdef LP
+		if (des->OperationName() != L"LearnableParameter" && src->OperationName() != L"LearnableParameter")
+		{
+#endif
+			if (des->OperationName() == OperationNameOf(PastValueNode) || des->OperationName() == L"Delay")
+			{
+				// special treament for arc with PastValue node as the children
+				// create a dummy node
+				ComputationNodeBasePtr pastValueNode = des;
+				wstring dummyName = des->GetName() + L".dummy";
+				wstring out = msra::strfun::wstrprintf(L"node [ shape = box3d  , color = lightgray, style = \"filled\" , label = \"%ls\" ] ; \"%ls\"\n",
+					(pastValueNode->GetName() + L"\\n(PastValue)").c_str(),
+					dummyName.c_str());
+				line = out;
+				line += msra::strfun::wstrprintf(L"\"%ls\" -> \"%ls\" ; \n", dummyName.c_str(), srcname.c_str());
+			}
+			else if (des->OperationName() == OperationNameOf(FutureValueNode))
+			{
+				// special treament for arc with FutureValue node as the children
+				// create a dummy node
+				ComputationNodeBasePtr futureValueNode = des;
+				wstring dummyName = des->GetName() + L".dummy";
+				wstring out = msra::strfun::wstrprintf(L"node [ shape = box3d  , color = red, style = \"filled\" , label = \"%ls\" ] ; \"%ls\"\n",
+					(futureValueNode->GetName() + L"\\n(FutureValue)").c_str(),
+					dummyName.c_str());
+				line = out;
+				line += msra::strfun::wstrprintf(L"\"%ls\" -> \"%ls\" ; \n", dummyName.c_str(), srcname.c_str());
+			}
+			else
+			{
+				if (des->OperationName() == OperationNameOf(LearnableParameter))
+				{
+					if (des->GetSampleLayout().GetDims().size() > 1)
+						if (des->GetSampleLayout().GetDim(1) != 1)
+							line = msra::strfun::wstrprintf(L"\"%ls\" -> \"%ls\" ; \n", desname.c_str(), srcname.c_str());
+				}
+				else
+					line = msra::strfun::wstrprintf(L"\"%ls\" -> \"%ls\" ; \n", desname.c_str(), srcname.c_str());
+			}
+#ifdef LP
+		}
+#endif
+		fstream << line;
 
-        if (des->OperationName() == OperationNameOf(PastValueNode) || des->OperationName() == L"Delay")
-        {
-            // special treament for arc with PastValue node as the children
-            // create a dummy node
-            ComputationNodeBasePtr pastValueNode = des;
-            wstring dummyName = des->GetName() + L".dummy";
-            wstring out = msra::strfun::wstrprintf(L"node [ shape = box3d  , color = lightgray, style = \"filled\" , label = \"%ls\" ] ; \"%ls\"\n",
-                                                   (pastValueNode->GetName() + L"\\n(PastValue)").c_str(),
-                                                   dummyName.c_str());
-            line = out;
-            line += msra::strfun::wstrprintf(L"\"%ls\" -> \"%ls\" ; \n", dummyName.c_str(), srcname.c_str());
-        }
-        else if (des->OperationName() == OperationNameOf(FutureValueNode))
-        {
-            // special treament for arc with FutureValue node as the children
-            // create a dummy node
-            ComputationNodeBasePtr futureValueNode = des;
-            wstring dummyName = des->GetName() + L".dummy";
-            wstring out = msra::strfun::wstrprintf(L"node [ shape = box3d  , color = red, style = \"filled\" , label = \"%ls\" ] ; \"%ls\"\n",
-                                                   (futureValueNode->GetName() + L"\\n(FutureValue)").c_str(),
-                                                   dummyName.c_str());
-            line = out;
-            line += msra::strfun::wstrprintf(L"\"%ls\" -> \"%ls\" ; \n", dummyName.c_str(), srcname.c_str());
-        }
-        else
-        {
-            line = msra::strfun::wstrprintf(L"\"%ls\" -> \"%ls\" ; \n", desname.c_str(), srcname.c_str());
-        }
-
-        fstream << line;
     }
     fstream << L"\n}\n";
 }
@@ -802,8 +952,10 @@ void ComputationNetwork::PlotNetworkTopology(const wstring outputFile) //  [1/13
         // note: this will also loop over m_features and m_labels, which will do nothing since they have no inputs
         // TODO: test whether that is true
         const auto& group = *groupIter;
-        for (size_t i = 0; i < group.size(); i++)
-            group[i]->EnumerateArcs(visited, arcs);
+		for (size_t i = 0; i < group.size(); i++)
+		{
+				group[i]->EnumerateArcs(visited, arcs);
+		}
     }
 
     // ////////////////////////////////////////////////////////////////////////
@@ -831,11 +983,11 @@ void ComputationNodeBase::EnumerateArcs(std::unordered_set<ComputationNodeBasePt
             {
                 for (size_t i = 0; i < curNode->m_inputs.size(); i++)
                 {
-                    arcs.push_back(ComputationArc(curNode, curNode->m_inputs[i]));
-
+					arcs.push_back(ComputationArc(curNode, curNode->m_inputs[i]));
                     if (visited.find(curNode->m_inputs[i]) == visited.end()) // this children has not been visited before
                         tovisit.push_front(curNode->m_inputs[i]);            // going to visit each of the children
                 }
+
                 visited.insert(curNode);
             }
         }

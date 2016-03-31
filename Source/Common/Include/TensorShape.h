@@ -420,6 +420,7 @@ public:
 
     // accessors
     size_t GetDim(size_t k) const { return m_dims[k]; }
+	size_t GetStride(size_t k) const { return m_strides[k]; }
     size_t GetDimPadded(size_t k) const { return k < GetRank() ? GetDim(k) : 1; }   // like GetDim() but return 1 for extra (out of bounds) dimensions
     size_t GetRank() const { return m_dims.size(); }
     size_t GetNumElements() const

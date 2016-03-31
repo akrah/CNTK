@@ -3512,6 +3512,17 @@ void Matrix<ElemType>::DecideAndMoveToRightDevice(const Matrix<ElemType>& a, con
     d._transferToDevice(a.GetDeviceId()); // BUGBUG: Is this correct in case a,b,c share the same preferredDevice?
 }
 
+// same but for 4 matrices
+template <class ElemType>
+void Matrix<ElemType>::DecideAndMoveToRightDevice(const Matrix<ElemType>& a, const Matrix<ElemType>& b, const Matrix<ElemType>& c, const Matrix<ElemType>& d, const Matrix<ElemType>& e)
+{
+	int deviceIdA = a.GetDeviceId();
+	b._transferToDevice(deviceIdA);
+	c._transferToDevice(deviceIdA);
+	d._transferToDevice(deviceIdA);
+	e._transferToDevice(deviceIdA);
+}
+
 template <class ElemType>
 void Matrix<ElemType>::_transferToDevice(int to_id, bool ismoved /*= true*/, bool emptyTransfer /* = false*/) const
 {
@@ -5056,22 +5067,41 @@ void Matrix<ElemType>::TensorOp(ElemType beta, const Matrix<ElemType>& a, const 
 }
 
 template <class ElemType>
-void Matrix<ElemType>::TensorOp(ElemType beta, const Matrix<ElemType>& a, const Matrix<ElemType>& b, const Matrix<ElemType>& c, ElemType alpha, ElementWiseOperator op,
-                                const array<size_t, 4>& offsets,
-                                const SmallVector<size_t>& regularOpDims, const array<SmallVector<ptrdiff_t>, 4>& regularStrides,
-                                const SmallVector<size_t>& reducingOpDims, const array<SmallVector<ptrdiff_t>, 4>& reducingStrides)
+void Matrix<ElemType>::TensorOp(ElemType beta, const Matrix<ElemType>& a, ElemType b, ElemType c, ElemType alpha, ElementWiseOperator op,
+                                const array<size_t, 2>& offsets,
+                                const SmallVector<size_t>& regularOpDims, const array<SmallVector<ptrdiff_t>, 2>& regularStrides,
+                                const SmallVector<size_t>& reducingOpDims, const array<SmallVector<ptrdiff_t>, 2>& reducingStrides)
 {
-    VerifyIsDense(*this) && VerifyIsDense(a) && VerifyIsDense(b) && VerifyIsDense(c);
+    VerifyIsDense(*this) && VerifyIsDense(a);
 
-    DecideAndMoveToRightDevice(*this, a, b, c);
+    DecideAndMoveToRightDevice(*this, a);
 
     DISPATCH_MATRIX_ON_FLAG(this,
                             this,
-                            m_CPUMatrix->TensorOp(beta, *a.m_CPUMatrix, *b.m_CPUMatrix, *c.m_CPUMatrix, alpha, op, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides),
-                            m_GPUMatrix->TensorOp(beta, *a.m_GPUMatrix, *b.m_GPUMatrix, *c.m_GPUMatrix, alpha, op, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides),
+							NOT_IMPLEMENTED,
+                            m_GPUMatrix->TensorOp(beta, *a.m_GPUMatrix, b, c, alpha, op, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides),
                             NOT_IMPLEMENTED,
                             NOT_IMPLEMENTED);
 }
+
+template <class ElemType>
+void Matrix<ElemType>::TensorOp(ElemType beta, const Matrix<ElemType>& a, const Matrix<ElemType>& b, ElemType c, const ElemType d, ElemType alpha, ElementWiseOperator op,
+	const array<size_t, 3>& offsets,
+	const SmallVector<size_t>& regularOpDims, const array<SmallVector<ptrdiff_t>, 3>& regularStrides,
+	const SmallVector<size_t>& reducingOpDims, const array<SmallVector<ptrdiff_t>, 3>& reducingStrides)
+{
+	VerifyIsDense(*this) && VerifyIsDense(a) && VerifyIsDense(b);
+
+	DecideAndMoveToRightDevice(*this, a, b);
+
+	DISPATCH_MATRIX_ON_FLAG(this,
+		this,
+		NOT_IMPLEMENTED,
+		m_GPUMatrix->TensorOp(beta, *a.m_GPUMatrix, *b.m_GPUMatrix, c, d, alpha, op, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides),
+		NOT_IMPLEMENTED,
+		NOT_IMPLEMENTED);
+}
+
 
 template class Matrix<float>;
 template class Matrix<double>;

@@ -42,9 +42,39 @@ public:
     virtual void /*ComputationNode::*/ ForwardProp(const FrameRange& fr) override
     {
         size_t rank = DetermineElementwiseTensorRank();
-        auto result = ValueTensorFor(rank, fr);
-        auto input = Input(0)->ValueTensorFor(rank, fr);
-        result.DoUnaryOpOf(0, input, 1, opForward);
+        TensorView<ElemType> result = ValueTensorFor(rank, fr);
+        TensorView<ElemType> input = Input(0)->ValueTensorFor(rank, fr);
+
+		if (OperationName() == OperationNameOf(AutobinomialNode))
+		{
+			size_t 	this_n, prev_n;
+			GetDepth(Input(0), rank, &prev_n, &this_n);
+			ElemType rap, fact;
+
+			if (prev_n > this_n)
+			{
+				rap  = (ElemType)prev_n / this_n;
+				fact = 16 / rap;
+			}
+			else
+			{
+				rap = (ElemType)this_n / prev_n;
+				fact = 16 / rap;
+			}
+
+
+			ElemType Gamma = fact * rap;
+			ElemType gamma = fact;
+
+			result.DoTernaryOpOf(0, input, Gamma, gamma, 1, opForward);
+		}
+		else
+			result.DoUnaryOpOf(0, input, 1, opForward);
+
+#ifdef NANCHECK_F
+		result.HasNan("Autobinomial - Out - F");
+		input.HasNan("Autobinomial - In - F");
+#endif
     }
 
     virtual void /*ComputationNode::*/ BackpropTo(const size_t inputIndex, const FrameRange& fr) override
@@ -60,7 +90,39 @@ public:
                               Input(0)->ValueTensorFor(rank, fr);
         // If gradient can be compute from output rather than input, then that's better for mem sharing (and faster in most cases).
         // Not possible for Cos().
-        sliceInputGrad.DoBinaryOpOf(1, sliceOutputGrad, sliceValue, 1, opBackward);
+
+		if (OperationName() == OperationNameOf(AutobinomialNode))
+		{
+			size_t 	this_n, prev_n;
+			// swap for backprop
+			GetDepth(Input(0), rank, &this_n, &prev_n);
+
+			ElemType rap, fact;
+
+			if (prev_n > this_n)
+			{
+				rap = (ElemType)prev_n / this_n;
+				fact = 16 / rap;
+			}
+			else
+			{
+				rap = (ElemType)this_n / prev_n;
+				fact = 16 / rap;
+			}
+
+			ElemType Gamma = fact * rap;
+			ElemType gamma = fact;
+
+			sliceInputGrad.DoTernaryOpOf(1, sliceOutputGrad, Gamma, gamma, 1, opBackward);
+		}
+		else
+			sliceInputGrad.DoBinaryOpOf(1, sliceOutputGrad, sliceValue, 1, opBackward);
+
+#ifdef NANCHECK_B
+		sliceOutputGrad("Autobinomial - Out - B");
+		sliceInputGrad.HasNan("Autobinomial - In - B");
+#endif
+
     }
 
     virtual void /*ComputationNodeBase::*/ Validate(bool isFinalValidationPass) override
@@ -76,6 +138,20 @@ public:
     {
         return !gradientFromOutput;
     }
+
+	void GetDepth(ComputationNodePtr node, size_t rank, size_t* prev_no, size_t* this_no)
+	{
+		const auto& shape = node->GetSampleLayout();
+
+		*this_no = *prev_no = 1;
+
+		for (size_t i = 0; i < rank; i++)
+		{
+			*this_no *= shape.GetDim(i);
+			*prev_no *= shape.GetStride(i);
+		}
+	}
+
 };
 
 #define UnaryElementWiseWithOpCodeNodeBaseMembers UsingComputationNodeMembersBoilerplate;
@@ -117,7 +193,7 @@ DeclareUnaryElementWiseWithOpCodeNode(RectifiedLinear, LinearRectifier, Elementw
 DeclareUnaryElementWiseWithOpCodeNode(Log,             Log,             ElementwiseProductWithLogDerivativeFromOutput,             true);
 DeclareUnaryElementWiseWithOpCodeNode(Exp,             Exp,             ElementwiseProduct,                                        true);
 DeclareUnaryElementWiseWithOpCodeNode(Cosine,          Cosine,          ElementwiseProductWithCosDerivative,                       false);
-
+DeclareUnaryElementWiseWithOpCodeNode(Autobinomial,    Autobinomial,    AutobinomialDerivative,                                    true);
 #pragma pop_macro("DeclareUnaryElementWiseWithOpCodeNode")
 
 // -----------------------------------------------------------------------

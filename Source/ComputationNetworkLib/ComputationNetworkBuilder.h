@@ -131,6 +131,7 @@ public:
 #if 1 // legacy
     ComputationNodePtr LegacyReshape(const ComputationNodePtr a, const size_t num_rows, const TensorShape& imageLayout, const std::wstring nodeName = L"");
 #endif
+	ComputationNodePtr Autobinomial(const ComputationNodePtr a, const std::wstring nodeName = L"");
 };
 
 // create a new from config

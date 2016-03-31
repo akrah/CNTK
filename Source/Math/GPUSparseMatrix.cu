@@ -2368,7 +2368,7 @@ GPUSparseMatrix<ElemType>& GPUSparseMatrix<ElemType>::AssignLinearRectifierDeriv
 template <class ElemType>
 GPUSparseMatrix<ElemType>& GPUSparseMatrix<ElemType>::InplaceTanh()
 {
-    performElementWiseFunction(ElementWiseOperator::opTanh, *this);
+	performElementWiseFunction(ElementWiseOperator::opTanh, *this);
     return *this;
 }
 
@@ -2384,7 +2384,7 @@ GPUSparseMatrix<ElemType>& GPUSparseMatrix<ElemType>::AssignTanhOf(const GPUSpar
 template <class ElemType>
 GPUSparseMatrix<ElemType>& GPUSparseMatrix<ElemType>::InplaceSqrt()
 {
-    performElementWiseFunction(ElementWiseOperator::opSqrt, *this);
+	performElementWiseFunction(ElementWiseOperator::opSqrt, *this);
     return *this;
 }
 
@@ -2393,7 +2393,7 @@ GPUSparseMatrix<ElemType>& GPUSparseMatrix<ElemType>::AssignSqrtOf(const GPUSpar
 {
     if (this != &a)
         Resize(a.GetNumRows(), a.GetNumCols());
-    performElementWiseFunction(ElementWiseOperator::opSqrt, a);
+	performElementWiseFunction(ElementWiseOperator::opSqrt, a);
     return *this;
 }
 
@@ -2452,7 +2452,7 @@ GPUSparseMatrix<ElemType>& GPUSparseMatrix<ElemType>::AssignLogOf(const GPUSpars
 template <class ElemType>
 GPUSparseMatrix<ElemType>& GPUSparseMatrix<ElemType>::InplaceAbs()
 {
-    performElementWiseFunction(ElementWiseOperator::opAbs, *this);
+	performElementWiseFunction(ElementWiseOperator::opAbs, *this);
     return *this;
 }
 
@@ -2461,7 +2461,7 @@ GPUSparseMatrix<ElemType>& GPUSparseMatrix<ElemType>::AssignAbsOf(const GPUSpars
 {
     if (this != &a)
         Resize(a.GetNumRows(), a.GetNumCols());
-    performElementWiseFunction(ElementWiseOperator::opAbs, a);
+	performElementWiseFunction(ElementWiseOperator::opAbs, a);
     return *this;
 }
 
@@ -2603,15 +2603,15 @@ void GPUSparseMatrix<ElemType>::performElementWiseFunction(ElementWiseOperator k
     case ElementWiseOperator::opSigmoid:
         return _elementWiseSigmoidOnCuda<ElemType><<<blocksPerGrid, GridDim::maxThreadsPerBlock>>>(src.NzValues(), NzValues(), N);
     case ElementWiseOperator::opTanh:
-        return _elementWiseTanhOnCuda<ElemType><<<blocksPerGrid, GridDim::maxThreadsPerBlock>>>(src.NzValues(), NzValues(), N);
+		return _elementWiseTanhOnCuda<ElemType> << <blocksPerGrid, GridDim::maxThreadsPerBlock >> >(src.NzValues(), NzValues(), N);
     case ElementWiseOperator::opSqrt:
-        return _elementWiseSqrtOnCuda<ElemType><<<blocksPerGrid, GridDim::maxThreadsPerBlock>>>(src.NzValues(), NzValues(), N);
+		return _elementWiseSqrtOnCuda<ElemType> << <blocksPerGrid, GridDim::maxThreadsPerBlock >> >(src.NzValues(), NzValues(), N);
     case ElementWiseOperator::opExp:
-        return _elementWiseExpOnCuda<ElemType><<<blocksPerGrid, GridDim::maxThreadsPerBlock>>>(src.NzValues(), NzValues(), N);
+		return _elementWiseExpOnCuda<ElemType> << <blocksPerGrid, GridDim::maxThreadsPerBlock >> >(src.NzValues(), NzValues(), N);
     case ElementWiseOperator::opLog:
-        return _elementWiseLogOnCuda<ElemType><<<blocksPerGrid, GridDim::maxThreadsPerBlock>>>(src.NzValues(), NzValues(), N);
+		return _elementWiseLogOnCuda<ElemType> << <blocksPerGrid, GridDim::maxThreadsPerBlock >> >(src.NzValues(), NzValues(), N);
     case ElementWiseOperator::opAbs:
-        return _elementWiseAbsOnCuda<ElemType><<<blocksPerGrid, GridDim::maxThreadsPerBlock>>>(src.NzValues(), NzValues(), N);
+		return _elementWiseAbsOnCuda<ElemType> << <blocksPerGrid, GridDim::maxThreadsPerBlock >> >(src.NzValues(), NzValues(), N);
     case ElementWiseOperator::opLinearRectifierDerivative:
         return _elementWiseLinRectDerivativeOnCuda<ElemType><<<blocksPerGrid, GridDim::maxThreadsPerBlock>>>(src.NzValues(), NzValues(), N);
     default:

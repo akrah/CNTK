@@ -266,21 +266,39 @@ void TensorView<ElemType>::DoBinaryOpOf(ElemType beta, const TensorView& a, cons
 }
 
 template <class ElemType>
-void TensorView<ElemType>::DoTernaryOpOf(ElemType beta, const TensorView& a, const TensorView& b, const TensorView& c, ElemType alpha, ElementWiseOperator op)
+void TensorView<ElemType>::DoTernaryOpOf(ElemType beta, const TensorView& a, ElemType b, ElemType c, ElemType alpha, ElementWiseOperator op)
 {
     // static int cc = 0; if (cc++ == 0)
     //    fprintf(stderr, "Tensor Op: Op %d: %s, %s, %s -> %s\n", (int)op, string(a.GetShape()).c_str(), string(b.GetShape()).c_str(), string(c.GetShape()).c_str(), string(GetShape()).c_str());
 
-    array<size_t, 4> offsets;
-    array<SmallVector<ptrdiff_t>, 4> regularStrides, reducingStrides;
+    array<size_t, 2> offsets;
+    array<SmallVector<ptrdiff_t>, 2> regularStrides, reducingStrides;
     SmallVector<size_t> regularOpDims, reducingOpDims;
-    PrepareTensorOperands<ElemType, 4>(array<TensorShape, 4>{a.GetShape(), b.GetShape(), c.GetShape(), GetShape()}, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides);
+    PrepareTensorOperands<ElemType, 2>(array<TensorShape, 2>{a.GetShape(), GetShape()}, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides);
 
     // output cannot be input when reducing
     if (reducingOpDims.size() > 0)
-        CheckDifferentObject(a, *this) && CheckDifferentObject(b, *this) && CheckDifferentObject(c, *this);
+        CheckDifferentObject(a, *this);
 
-    GetSOB().TensorOp(beta, a.GetSOB(), b.GetSOB(), c.GetSOB(), alpha, op, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides);
+    GetSOB().TensorOp(beta, a.GetSOB(), b, c, alpha, op, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides);
+}
+
+template <class ElemType>
+void TensorView<ElemType>::DoQuaternaryOpOf(ElemType beta, const TensorView& a, const TensorView& b, ElemType c, ElemType d, ElemType alpha, ElementWiseOperator op)
+{
+	// static int cc = 0; if (cc++ == 0)
+	//    fprintf(stderr, "Tensor Op: Op %d: %s op %s -> %s\n", (int)op, string(a.GetShape()).c_str(), string(b.GetShape()).c_str(), string(GetShape()).c_str());
+
+	array<size_t, 3> offsets;
+	array<SmallVector<ptrdiff_t>, 3> regularStrides, reducingStrides;
+	SmallVector<size_t> regularOpDims, reducingOpDims;
+	PrepareTensorOperands<ElemType, 3>(array<TensorShape, 3>{a.GetShape(), b.GetShape(), GetShape()}, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides);
+
+	// output cannot be input when reducing
+	if (reducingOpDims.size() > 0)
+		CheckDifferentObject(a, *this) && CheckDifferentObject(b, *this);
+
+	GetSOB().TensorOp(beta, a.GetSOB(), b.GetSOB(), c, d, alpha, op, offsets, regularOpDims, regularStrides, reducingOpDims, reducingStrides);
 }
 
 // simple test function for testing stuff

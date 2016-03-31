@@ -179,15 +179,34 @@ void DoCrossValidate(const ConfigParameters& config)
         minErrIds.push_back(0);
     }
 
+	fprintf(stderr, "Validation:\n");
+	fprintf(stderr, "------------\n");
+	fprintf(stderr, "Test Err: ");
+
+	for (int i = 0; i < cvErrorResults.size(); i++)
+	{
+		fprintf(stderr, "%f, ", cvErrorResults[i][0]);
+	}
+	fprintf(stderr, "\n");
+
+	fprintf(stderr, "Test Loss: ");
+	for (int i = 0; i < cvErrorResults.size(); i++)
+	{
+		fprintf(stderr, "%f, ", cvErrorResults[i][1]);
+	}
+	fprintf(stderr, "\n");
+
     for (int i = 0; i < cvErrorResults.size(); i++)
     {
         evalErrors = cvErrorResults[i];
+	
         for (int j = 0; j < evalErrors.size(); j++)
         {
             if (evalErrors[j] < minErrors[j])
             {
                 minErrors[j] = evalErrors[j];
                 minErrIds[j] = i;
+
             }
         }
     }
