@@ -116,8 +116,12 @@ namespace Microsoft {
 				
 				m_blockSizeOfUnzippedBuffer = 4;
 				m_unzippedBufferLen = sizeof(int32_t) * m_totalDim * m_blockSampleCnt * m_blockSizeOfUnzippedBuffer;
+				if (m_unzippedBuffer != nullptr)
+					free(m_unzippedBuffer);
 				m_unzippedBuffer = malloc(m_unzippedBufferLen);
 
+				if (m_zippedFileBlockBuffer != nullptr)
+					free(m_zippedFileBlockBuffer);
 				m_zippedFileBlockBuffer = malloc(m_blockSize);
 
 				m_numBatches = m_numRows / m_microBatchSize;
@@ -269,7 +273,7 @@ namespace Microsoft {
 					fprintf(stderr, "iEpochSize %d, minEpochSize %d, startBlock %d, windowSize %d, subsetNum %d, numSubsets %d\n", tmpEpochSize[i], (int)minEpochSize, (int)m_startBlock, (int)m_windowSize, (int)subsetNum, (int)numSubsets);
 				}
 
-				delete tmpEpochSize;
+				free(tmpEpochSize);
 
 				return minEpochSize;
 			}
